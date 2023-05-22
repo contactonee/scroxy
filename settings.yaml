@@ -1,0 +1,50 @@
+---
+commander:
+  port: 80
+  password: "password"
+
+instance:
+  port: 3128
+  username: null
+  password: null
+  scaling:
+    min: 1
+    max: 5
+    downscaleDelay: 300
+  checkDelay: 100
+  checkAliveDelay: 100
+  stopIfCrashedDelay: 100
+  autorestart:
+    minDelay: 100
+    maxDelay: 500
+
+logs:
+  path: "/Users/contactone/Desktop/scroxy.log"
+
+providers:
+  - type: digitalocean
+    token: "token"
+    region: "ams3"
+    sshKeyNames:
+      - "Digital Ocean"
+    size: "s-1vcpu-512mb-10gb"
+    name: "Scroxy Endpoint"
+    imageName: "Snapshot name"
+    projectName: "Scroxy"
+    tags:
+      - scroxy
+    max: 100
+
+proxy:
+  squid:
+    path: "/opt/homebrew/opt/squid/sbin/squid"
+  auth:
+    username: "jdv"
+    password: "password"
+  mitm:
+    cert_filename: null
+    key_filename: null
+
+stats:
+  retention: 10000
+  samplingDelay: 10
