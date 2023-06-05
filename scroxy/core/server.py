@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 SQUID_CONFIG_DIR = Path('scroxy/squid')
 
+
 class Server:
 
     IDLE, ACTIVE = 0, 1
@@ -38,14 +39,25 @@ class Server:
             else:
                 logger.error(
                     'Error during registration "%s" provider. ', provider_config['type'])
-                    
+
         if len(self.providers) == 0:
             logger.error('No valid provider')
+        
+        self.configure()
 
+    def configure(self):
+        with open(SQUID_CONFIG_DIR / 'scroxy.conf.temp') as fp, \
+                open(SQUID_CONFIG_DIR / 'scroxy.conf', 'w') as conf_fp:
+            str = fp.read()
+            conf_fp.write(str.format(
+                basic_auth=self.config['proxy']['basic_auth']['path'],
+                http_port=self.config['proxy']['port']
+            ))
 
     def spinup(self):
 
-        new_proxies = self.spawn(self.config['instance']['scaling']['max'] - len(self.proxies))
+        new_proxies = self.spawn(
+            self.config['instance']['scaling']['max'] - len(self.proxies))
         self.proxies.extend(new_proxies)
 
         if len(self.proxies) < self.config['instance']['scaling']['max']:
@@ -57,20 +69,21 @@ class Server:
 
         n = max(n, 0)
         new_proxies = []
-        
+
         for provider in self.providers:
-            
+
             if n <= 0:
                 break
 
             created = provider.create(n)
             new_proxies.extend(created)
             n -= len(created)
-        
+
         if n > 0:
-            logger.warning(f'Unable to spawn enough instances. Requested {n+len(new_proxies)}, spawned {len(new_proxies)}.')
-        
-        logger.debug(f'Spawned {len(new_proxies)} instances' )
+            logger.warning(
+                f'Unable to spawn enough instances. Requested {n+len(new_proxies)}, spawned {len(new_proxies)}.')
+
+        logger.debug(f'Spawned {len(new_proxies)} instances')
 
         return new_proxies
 
