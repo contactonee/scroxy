@@ -1,21 +1,21 @@
 from time import time
 from abc import ABC, abstractmethod
+from typing import List
 
 
-class Provider(ABC):
+class Provider:
 
-    @abstractmethod
-    def create(self, n: int) -> list['Proxy']:
+    name = None
+
+    def create(self, n: int) -> List['Proxy']:
         pass
 
 
-class Proxy(ABC):
+class Proxy:
 
     @property
-    @abstractmethod
     def host(self):
         pass
 
-    @abstractmethod
     def destroy(self):
         pass

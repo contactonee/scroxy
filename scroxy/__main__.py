@@ -1,6 +1,7 @@
 import yaml
-from app.core.manager import Manager
+from . import Server
 import logging
+
 
 
 def main():
@@ -15,10 +16,9 @@ def main():
     with open('settings.yaml') as fp:
         config = yaml.safe_load(fp)
 
-    app = Manager(**config)
+    app = Server(**config)
     app.run()
 
 
 if __name__ == '__main__':
     main()
-    
