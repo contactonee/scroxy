@@ -4,6 +4,8 @@ from requests.adapters import HTTPAdapter
 from time import sleep
 import logging
 from typing import List
+import re
+from os import getenv
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +16,13 @@ class DigitalOceanProvider(Provider):
     URL = 'https://api.digitalocean.com'
 
     def __init__(self, **config):
+
         self.config = config
+
+        m = re.match(r'^\$\((.+)\)$', self.config['token'])
+        if m:
+            self.config['token'] = getenv(m.group(1))
+        
 
         self.session = requests.Session()
         self.session.mount('http://', HTTPAdapter(max_retries=10))
@@ -27,7 +35,6 @@ class DigitalOceanProvider(Provider):
         self.config['imageId'] = self.get_image_id(config['imageName'])
         logger.debug('Loading projects')
         self.config['projectId'] = self.get_project_id(config['projectName'])
-
 
     def get_ssh_key_ids(self, ssh_key_names):
         response = self.session.get(

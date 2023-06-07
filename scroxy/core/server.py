@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 import signal
 from typing import List
+import htpasswd
 
 logger = logging.getLogger(__name__)
 
@@ -42,15 +43,30 @@ class Server:
 
         if len(self.providers) == 0:
             logger.error('No valid provider')
-        
+
         self.configure()
 
     def configure(self):
+        
+        with open(SQUID_CONFIG_DIR / 'passwords', 'w') as fp:
+            pass
+
+        with htpasswd.Basic(SQUID_CONFIG_DIR / 'passwords', mode='md5') as fp:
+            try:
+                fp.add(self.config['proxy']['auth']['username'],
+                       self.config['proxy']['auth']['password'])
+            except htpasswd.UserExists:
+                fp.change_password(self.config['proxy']['auth']['username'],
+                                   self.config['proxy']['auth']['password'])
+        
+        with open(SQUID_CONFIG_DIR / 'peers.conf', 'w') as fp:
+            pass
+
         with open(SQUID_CONFIG_DIR / 'scroxy.conf.temp') as fp, \
                 open(SQUID_CONFIG_DIR / 'scroxy.conf', 'w') as conf_fp:
             str = fp.read()
             conf_fp.write(str.format(
-                basic_auth=self.config['proxy']['basic_auth']['path'],
+                basic_auth=self.config['proxy']['auth']['path'],
                 http_port=self.config['proxy']['port']
             ))
 
@@ -104,7 +120,12 @@ class Server:
         with open(SQUID_CONFIG_DIR / 'peers.conf', 'w') as peers_file:
             for proxy in self.proxies:
                 peers_file.write(
-                    f"cache_peer {proxy.host} parent {self.config['instance']['port']} 0 no-query round-robin login={self.config['instance']['username']}:{self.config['instance']['password']}\n")
+                    "cache_peer {host} parent {port} 0 no-query round-robin login={username}:{password}\n".format(
+                        host=proxy.host,
+                        port=self.config['instance']['port'],
+                        username=self.config['instance']['username'],
+                        password=self.config['instance']['password']
+                    ))
 
         subprocess.run([
             self.config['proxy']['squid']['path'],
